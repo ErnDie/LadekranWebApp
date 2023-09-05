@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ladekran Control</title>
+</head>
+<body>
+  <input type="file" id="fileInput">
+  <button id="startButton">Start</button>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Function to handle file upload
+      function uploadFile(file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        $.ajax({
+          type: "POST",
+          url: "http://localhost:8000/upload", // Replace with the actual backend upload endpoint
+          data: formData,
+          contentType: false,
+          processData: false,
+        });
+      }
+
+      // Event handler for the Start button
+      $("#startButton").click(function() {
+        const fileInput = document.getElementById("fileInput");
+        const selectedFile = fileInput.files[0];
+
+        if (selectedFile) {
+          uploadFile(selectedFile);
+        } else {
+          console.error("No file selected.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>
