@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 import string
 import numpy as np
 
-import ntplib
-
 
 class Latency:
 
@@ -103,30 +101,30 @@ class Latency:
         self.jitter_no_upload_average = round(float(np.average(self.jitter_no_upload_intervals)), 6)
 
     def saveAsJSON(self):
-        time = 3
+        time = 30
         json_object = []
         for rtt in self.rtt_list:
             dic = {"seconds": time, "latency": rtt, "latency_type": "rtt"}
             json_object.append(dic)
-            time = time + 3
+            time = time + 30
 
-        time = 3
+        time = 30
         for rtt in self.rtt_no_upload_list:
             dic = {"seconds": time, "latency": rtt, "latency_type": "rtt_no_upload"}
             json_object.append(dic)
-            time = time + 3
+            time = time + 30
 
-        time = 6
+        time = 60
         for jitter in self.jitter_intervals:
             dic = {"seconds": time, "latency": jitter, "latency_type": "jitter"}
             json_object.append(dic)
-            time = time + 3
+            time = time + 30
 
-        time = 6
+        time = 60
         for jitter in self.jitter_no_upload_intervals:
             dic = {"seconds": time, "latency": jitter, "latency_type": "jitter_no_upload"}
             json_object.append(dic)
-            time = time + 3
+            time = time + 30
 
         with open("sample.json", "w") as outfile:
             json.dump(json_object, outfile)
@@ -141,7 +139,7 @@ class Latency:
         result += "RTT-Durchschnitt: " + str(self.rtt_average) + "\n"
         result += "RTT-Standardabweichung: " + str(self.rtt_std_deviation) + "\n\n"
 
-        result = "RTTNoUpload-Ergebnisse: " + ','.join(map(str, self.rtt_no_upload_list)) + "\n"
+        result += "RTTNoUpload-Ergebnisse: " + ','.join(map(str, self.rtt_no_upload_list)) + "\n"
         result += "RTTNoUpload-Min: " + str(self.rtt_no_upload_min) + "\n"
         result += "RTTNoUpload-Max: " + str(self.rtt_no_upload_max) + "\n"
         result += "RTTNoUpload-25%-Quartil: " + str(self.rtt_no_upload_25_quantil) + "\n"
@@ -171,5 +169,3 @@ class Latency:
         with open("metrics.txt", "w") as outfile:
             outfile.write(result)
 
-    def cleanUpData(self):
-        self.rtt_list = [val for val in self.rtt_list if val <= 0.5]  # Should be changed for individual cases

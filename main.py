@@ -11,6 +11,7 @@ from crosslab.soa_services.file import FileService__Producer
 from crosslab.soa_services.message import MessageService__Consumer, MessageServiceEvent
 from latency import Latency
 
+global waiting_for_response
 
 async def main_async():
     latency_calc = Latency()
@@ -19,6 +20,7 @@ async def main_async():
         app = web.Application()
         app.router.add_route('GET', '/', handle_index)
         app.router.add_route('POST', '/upload', measurement)
+        app.router.add_route('GET', '/measure', measure)
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, 'localhost', 8000)
@@ -46,16 +48,32 @@ async def main_async():
         data = await request.post()
         uploaded_file = data['file']
         file_content = uploaded_file.file.read()
-        for i in range(0, 10):
+        for i in range(0, 20):
             print(f"Iteration: {i}")
+            global waiting_for_response
+            waiting_for_response = True
             latency_calc.start()
             print(file_content)
             await fileServiceProducer.sendFile("ino", file_content)
-            await asyncio.sleep(40)
+            print("File sent!")
+            while(waiting_for_response):
+                print("Waiting...")
+                await asyncio.sleep(1)
 
         await asyncio.sleep(3)
         latency_calc.calculateRTTJitter()
+        latency_calc.calculateRTTNoUploadJitter()
         latency_calc.calculateRTTMetrics()
+        latency_calc.calculateRTTNoUploadMetrics()
+        latency_calc.saveAsJSON()
+        latency_calc.saveMetricsAsTxt()
+
+
+    async def measure(request):
+        latency_calc.calculateRTTJitter()
+        latency_calc.calculateRTTNoUploadJitter()
+        latency_calc.calculateRTTMetrics()
+        latency_calc.calculateRTTNoUploadMetrics()
         latency_calc.saveAsJSON()
         latency_calc.saveMetricsAsTxt()
 
@@ -78,10 +96,12 @@ async def main_async():
     messageServiceConsumer = MessageService__Consumer("message")
 
     async def onMessage(message: MessageServiceEvent):
+        global waiting_for_response
         print("Received Message of type", message["message_type"])
         print("Message content:", message["message"])
         latency_calc.calculateLatency(message["message"])
         latency_calc.printLatency()
+        waiting_for_response = False
 
     messageServiceConsumer.on("message", onMessage)
     deviceHandler.add_service(messageServiceConsumer)
